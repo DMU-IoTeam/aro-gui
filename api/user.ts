@@ -2,6 +2,7 @@ import apiClient from './index';
 
 // 참고: 서버의 실제 User 모델에 맞게 수정이 필요합니다.
 export interface User {
+  id: number;
   email: string;
   name: string;
   role: 'GUARDIAN' | 'ADMIN';
