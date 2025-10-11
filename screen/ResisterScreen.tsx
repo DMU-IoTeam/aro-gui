@@ -25,6 +25,7 @@ export default function ResisterScreen() {
     setError("");
     try {
       const response = await loginSenior(email);
+      console.log("Login successful, access token:", response.accessToken);
       await setAccessToken(response.accessToken);
 
       // Register FCM Token

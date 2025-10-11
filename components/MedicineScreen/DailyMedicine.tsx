@@ -1,5 +1,5 @@
 import { Colors } from "@/constants/Colors";
-import React, { useState } from "react";
+import React from "react";
 import {
   Image,
   ImageSourcePropType,
@@ -9,9 +9,7 @@ import {
   TextStyle,
   View,
   ViewStyle,
-  Alert,
 } from "react-native";
-import { recordMedicationStatus } from "@/api/medication";
 
 type menuItem = {
   imageUrl: ImageSourcePropType;
@@ -21,60 +19,25 @@ type menuItem = {
   itemId?: number;
 };
 
-type reportProps = {
+export type DailyMedicineSelection = "먹음" | "안먹음" | null;
+
+type DailyMedicineProps = {
   title: string;
   contents: menuItem[];
+  selections: Record<number, DailyMedicineSelection>;
+  onSelect: (index: number, selection: DailyMedicineSelection) => void;
 };
 
-export default function DailyMedicine({ title, contents }: reportProps) {
-  const [selections, setSelections] = useState<{
-    [key: number]: string | null;
-  }>({});
-
-  const handleSelect = async (index: number, selection: string) => {
-    const item = contents[index];
-    
-    // UI 상태 업데이트
-    setSelections((prev) => {
-      const newSelections = { ...prev };
-      if (newSelections[index] === selection) {
-        newSelections[index] = null;
-      } else {
-        newSelections[index] = selection;
-      }
-      return newSelections;
-    });
-
-    // API에 복약 상태 저장 (scheduleId와 itemId가 있는 경우에만)
-    if (item.scheduleId && item.itemId) {
-      try {
-        const status = selection === "먹음" ? "taken" : "not_taken";
-        const timestamp = new Date().toISOString();
-        
-        await recordMedicationStatus({
-          scheduleId: item.scheduleId,
-          itemId: item.itemId,
-          status: status,
-          timestamp: timestamp,
-        });
-        
-        console.log(`복약 상태가 저장되었습니다: ${item.title} - ${selection}`);
-      } catch (error) {
-        console.error('복약 상태 저장 실패:', error);
-        Alert.alert(
-          '저장 실패',
-          '복약 상태를 저장하는데 실패했습니다. 다시 시도해주세요.',
-          [{ text: '확인' }]
-        );
-        
-        // 저장 실패 시 UI 상태 되돌리기
-        setSelections((prev) => {
-          const newSelections = { ...prev };
-          newSelections[index] = null;
-          return newSelections;
-        });
-      }
-    }
+export default function DailyMedicine({
+  title,
+  contents,
+  selections,
+  onSelect,
+}: DailyMedicineProps) {
+  const handleSelect = (index: number, selection: Exclude<DailyMedicineSelection, null>) => {
+    const current = selections[index] ?? null;
+    const nextSelection: DailyMedicineSelection = current === selection ? null : selection;
+    onSelect(index, nextSelection);
   };
 
   return (
@@ -85,7 +48,7 @@ export default function DailyMedicine({ title, contents }: reportProps) {
         {title}
       </Text>
       {contents.map((value, index) => {
-        const selectedOption = selections[index];
+        const selectedOption = selections[index] ?? null;
         const isGoodActive = selectedOption === "먹음";
         const isBadActive = selectedOption === "안먹음";
 

@@ -8,6 +8,7 @@ import notifee from '@notifee/react-native';
 import HomeScreen from './screen/index';
 import ChatScreen from './screen/ChatScreen';
 import GameScreen from './screen/GameScreen';
+import GameResultScreen from './screen/GameResultScreen';
 import HealthScreen from './screen/HealthScreen';
 import MedicineScreen from './screen/MedicineScreen';
 import ResisterScreen from './screen/ResisterScreen';
@@ -66,6 +67,7 @@ function App() {
         <Stack.Screen name="Home" component={HomeScreen} />
         <Stack.Screen name="Chat" component={ChatScreen} />
         <Stack.Screen name="Game" component={GameScreen} />
+        <Stack.Screen name="GameResult" component={GameResultScreen} />
         <Stack.Screen name="Health" component={HealthScreen} />
         <Stack.Screen name="Medicine" component={MedicineScreen} />
         <Stack.Screen name="Resister" component={ResisterScreen} />

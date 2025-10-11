@@ -191,3 +191,19 @@ export const recordMedicationStatus = async (
     throw error;
   }
 };
+
+export interface MedicationLogConfirmationPayload {
+  scheduleId: number;
+  confirmedAt: string;
+}
+
+export const confirmMedicationLog = async (
+  payload: MedicationLogConfirmationPayload,
+): Promise<void> => {
+  try {
+    await apiClient.post('/api/medication/log', payload);
+  } catch (error) {
+    console.error('Error confirming medication log:', error);
+    throw error;
+  }
+};

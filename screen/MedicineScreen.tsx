@@ -1,94 +1,173 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, ActivityIndicator, StyleSheet } from 'react-native';
-import CommonHeader from "@/components/Common/CommonHeader";
-import SafeAreaContainer from "@/components/Common/SafeAreaContainer";
-import DailyMedicine from "@/components/MedicineScreen/DailyMedicine";
-import { getMedicationSchedule, MedicationSchedule } from '@/api/medication';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { ActivityIndicator, Alert, Pressable, StyleSheet, Text, View } from 'react-native';
+import CommonHeader from '@/components/Common/CommonHeader';
+import SafeAreaContainer from '@/components/Common/SafeAreaContainer';
+import DailyMedicine, {
+  type DailyMedicineSelection,
+} from '@/components/MedicineScreen/DailyMedicine';
+import {
+  getMedicationSchedule,
+  confirmMedicationLog,
+  type MedicationSchedule,
+} from '@/api/medication';
+import { getMe } from '@/api/user';
+import { useNavigation } from '@react-navigation/native';
 
-// 더미 데이터 (API 실패 시 사용)
-const fallbackData = [
+type DailyMedicineItem = {
+  title: string;
+  contents: string;
+  imageUrl: ReturnType<typeof require>;
+  scheduleId?: number;
+  itemId?: number;
+};
+
+const fallbackData: DailyMedicineItem[] = [
   {
-    title: "고혈압약",
-    imageUrl: require("@/assets/images/health-icon1.png"),
-    contents: "1정, 식후 30분",
+    title: '등록된 복약 일정이 없어요',
+    imageUrl: require('@/assets/images/health-icon1.png'),
+    contents: '관리자에게 복약 일정을 등록해달라고 요청해보세요.',
   },
 ];
 
+const formatTime = (time: string) => {
+  if (!time) {
+    return '복용 시간 정보가 없어요';
+  }
+  const [hour, minute] = time.split(':');
+  return `${hour}:${minute}`;
+};
+
 export default function MedicineScreen() {
-  const [medicationData, setMedicationData] = useState(fallbackData);
+  const [items, setItems] = useState<DailyMedicineItem[]>(fallbackData);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [selections, setSelections] = useState<Record<number, DailyMedicineSelection>>({});
+  const [submitting, setSubmitting] = useState(false);
 
-  // 현재 시간을 가져오는 함수
-  const getCurrentTime = () => {
+  const navigation = useNavigation();
+
+  const currentTimeLabel = useMemo(() => {
     const now = new Date();
     const hours = now.getHours().toString().padStart(2, '0');
     const minutes = now.getMinutes().toString().padStart(2, '0');
     return `${hours}:${minutes}`;
-  };
+  }, []);
 
-  // API 데이터를 컴포넌트에서 사용할 수 있는 형태로 변환
-  const transformMedicationData = (schedules: MedicationSchedule[]) => {
-    const transformedData: any[] = [];
-    
-    schedules.forEach((schedule) => {
-      schedule.items.forEach((item) => {
-        transformedData.push({
+  const transformSchedule = useCallback(
+    (schedules: MedicationSchedule[]): DailyMedicineItem[] =>
+      schedules.flatMap((schedule) =>
+        (schedule.items ?? []).map((item) => ({
           title: item.name,
-          imageUrl: require("@/assets/images/health-icon1.png"), // 기본 아이콘 사용
-          contents: item.memo || "복용 시간: " + schedule.time,
+          contents: item.memo || `복용 시간: ${formatTime(schedule.time)}`,
+          imageUrl: require('@/assets/images/medicine.png'),
           scheduleId: schedule.scheduleId,
           itemId: item.id,
-        });
-      });
-    });
-
-    return transformedData;
-  };
+        })),
+      ),
+    [],
+  );
 
   useEffect(() => {
-    const fetchMedicationSchedule = async () => {
+    const fetchSchedules = async () => {
       try {
         setLoading(true);
         setError(null);
-        
-        // TODO: 실제 seniorId를 사용하세요. 현재는 하드코딩된 값 사용
-        const seniorId = 1; // 실제 앱에서는 사용자 ID나 선택된 노인 ID를 사용
-        const schedules = await getMedicationSchedule(seniorId);
-        
+
+        const user = await getMe();
+        if (!user?.id) {
+          throw new Error('로그인 정보에서 시니어 ID를 찾을 수 없어요.');
+        }
+
+        const schedules = await getMedicationSchedule(user.id);
         if (schedules && schedules.length > 0) {
-          const transformedData = transformMedicationData(schedules);
-          setMedicationData(transformedData);
+          const transformed = transformSchedule(schedules);
+          const nextItems = transformed.length > 0 ? transformed : fallbackData;
+          setItems(nextItems);
+          setSelections({});
         } else {
-          // 데이터가 없으면 더미 데이터 사용
-          setMedicationData(fallbackData);
+          setItems(fallbackData);
+          setSelections({});
         }
       } catch (err) {
         console.error('Failed to fetch medication schedule:', err);
-        setError('복약 정보를 불러오는데 실패했습니다.');
-        // 에러 발생 시 더미 데이터 사용
-        setMedicationData(fallbackData);
+        setError('복약 정보를 불러오는 중 문제가 발생했어요. 잠시 후 다시 시도해주세요.');
+        setItems(fallbackData);
+        setSelections({});
       } finally {
         setLoading(false);
       }
     };
 
-    fetchMedicationSchedule();
-  }, []);
+    fetchSchedules();
+  }, [transformSchedule]);
+
+  const handleSelect = useCallback(
+    (index: number, selection: DailyMedicineSelection) => {
+      setSelections((prev) => {
+        const next = { ...prev };
+        if (selection === null) {
+          delete next[index];
+        } else {
+          next[index] = selection;
+        }
+        return next;
+      });
+    },
+  []);
+
+  const confirmTargets = useMemo(() => {
+    const targets = new Set<number>();
+    Object.entries(selections).forEach(([indexKey, value]) => {
+      if (value === '먹음') {
+        const item = items[Number(indexKey)];
+        if (item?.scheduleId != null) {
+          targets.add(item.scheduleId);
+        }
+      }
+    });
+    return Array.from(targets);
+  }, [items, selections]);
+
+  const handleConfirm = useCallback(async () => {
+    if (confirmTargets.length === 0) {
+      Alert.alert('안내', '복약 완료로 표시된 일정이 없어요.');
+      return;
+    }
+
+    try {
+      setSubmitting(true);
+      await Promise.all(
+        confirmTargets.map((scheduleId) =>
+          confirmMedicationLog({
+            scheduleId,
+            confirmedAt: new Date().toISOString(),
+          }),
+        ),
+      );
+      Alert.alert('완료', '복약 완료 기록이 저장되었어요.');
+      setSelections({});
+    } catch (err) {
+      console.error('Failed to confirm medication logs:', err);
+      Alert.alert('오류', '복약 완료 기록을 저장하지 못했어요. 다시 시도해주세요.');
+    } finally {
+      setSubmitting(false);
+      navigation.navigate('Home' as never); // 복약 기록 후 홈으로 이동
+    }
+  }, [confirmTargets]);
+
+  const isConfirmDisabled = submitting || confirmTargets.length === 0;
 
   if (loading) {
     return (
       <SafeAreaContainer>
         <CommonHeader
-          imageUrl={require("@/assets/images/medicine-no-bg.png")}
+          imageUrl={require('@/assets/images/medicine-no-bg.png')}
           title="복약 알림"
-          contents={`현재 시각: ${getCurrentTime()}`}
+          contents={`현재 시각: ${currentTimeLabel}`}
         />
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#0a7ea4" />
-          <Text style={styles.loadingText}>
-            복약 정보를 불러오는 중...
-          </Text>
+        <View style={styles.centeredContainer}>
+          <ActivityIndicator size="large" color="#2563EB" />
+          <Text style={styles.centeredText}>복약 정보를 불러오는 중이에요...</Text>
         </View>
       </SafeAreaContainer>
     );
@@ -97,44 +176,76 @@ export default function MedicineScreen() {
   return (
     <SafeAreaContainer>
       <CommonHeader
-        imageUrl={require("@/assets/images/medicine-no-bg.png")}
+        imageUrl={require('@/assets/images/medicine-no-bg.png')}
         title="복약 알림"
-        contents={`현재 시각: ${getCurrentTime()}`}
+        contents={`현재 시각: ${currentTimeLabel}`}
       />
-      {error && (
+      {error ? (
         <View style={styles.errorContainer}>
-          <Text style={styles.errorText}>
-            {error}
-          </Text>
+          <Text style={styles.errorText}>{error}</Text>
         </View>
-      )}
-      <DailyMedicine 
-        title="오늘 복약을 확인해주세요" 
-        contents={medicationData} 
+      ) : null}
+      <DailyMedicine
+        title="오늘 복약을 확인해주세요"
+        contents={items}
+        selections={selections}
+        onSelect={handleSelect}
       />
+      <Pressable
+        style={[styles.confirmButton, isConfirmDisabled && styles.confirmButtonDisabled]}
+        onPress={handleConfirm}
+        disabled={isConfirmDisabled}
+      >
+        {submitting ? (
+          <ActivityIndicator color="#FFFFFF" />
+        ) : (
+          <Text style={styles.confirmButtonText}>복약 완료 기록하기</Text>
+        )}
+      </Pressable>
     </SafeAreaContainer>
   );
 }
 
 const styles = StyleSheet.create({
-  loadingContainer: {
+  centeredContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    paddingHorizontal: 24,
   },
-  loadingText: {
-    marginTop: 10,
+  centeredText: {
+    marginTop: 16,
     fontSize: 16,
-    color: '#666',
+    color: '#475569',
   },
   errorContainer: {
-    padding: 20,
+    marginHorizontal: 24,
+    marginBottom: 16,
+    padding: 16,
+    borderRadius: 16,
     backgroundColor: '#FEF2F2',
-    margin: 20,
-    borderRadius: 10,
   },
   errorText: {
     color: '#DC2626',
+    fontSize: 14,
     textAlign: 'center',
+  },
+  confirmButton: {
+    marginHorizontal: 24,
+    marginTop: 12,
+    marginBottom: 24,
+    height: 52,
+    borderRadius: 16,
+    backgroundColor: '#2563EB',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  confirmButtonDisabled: {
+    backgroundColor: '#94A3B8',
+  },
+  confirmButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '700',
   },
 });

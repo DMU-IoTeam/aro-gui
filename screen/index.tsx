@@ -17,6 +17,7 @@ export default function HomeScreen() {
     const checkAuth = async () => {
       // await AsyncStorage.clear();
       const token = await AsyncStorage.getItem('accessToken');
+      console.log("Retrieved access token:", token);
       if (!token) {
         navigation.navigate('Resister' as never);
         return;
