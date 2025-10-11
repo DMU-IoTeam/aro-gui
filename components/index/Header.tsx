@@ -48,8 +48,8 @@ const Header = () => {
 const styles = StyleSheet.create({
   headerContainer: {
     backgroundColor: "#ffffff",
-    paddingVertical: 16,
-    paddingHorizontal: 20,
+    paddingVertical: 20,
+    paddingHorizontal: 24,
     borderBottomWidth: 1,
     borderBottomColor: "#e0e0e0",
     // iOS의 그림자 효과
@@ -72,13 +72,13 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   dateText: {
-    fontSize: 22,
+    fontSize: 28,
     fontWeight: "bold",
     color: "#121212",
     marginBottom: 4,
   },
   timeText: {
-    fontSize: 16,
+    fontSize: 20,
     color: "#555555",
   },
 

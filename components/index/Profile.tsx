@@ -12,7 +12,7 @@ const Profile = ({ name, loading }: Props) => {
       style={{
         justifyContent: 'center',
         alignItems: 'center',
-        gap: 8,
+        gap: 12,
         marginTop: 60,
         marginBottom: 50,
       }}
@@ -29,18 +29,18 @@ const Profile = ({ name, loading }: Props) => {
       />
       {loading ? (
         <Text
-          style={{ fontSize: 32, fontWeight: 700, color: Colors.font.default }}
+          style={{ fontSize: 40, fontWeight: 700, color: Colors.font.default }}
         >
           로딩 중...
         </Text>
       ) : (
         <Text
-          style={{ fontSize: 32, fontWeight: 700, color: Colors.font.default }}
+          style={{ fontSize: 40, fontWeight: 700, color: Colors.font.default }}
         >
           안녕하세요, {name}님!
         </Text>
       )}
-      <Text style={{ fontSize: 22, color: Colors.font.gray }}>
+      <Text style={{ fontSize: 26, color: Colors.font.gray }}>
         오늘도 건강한 하루 되세요
       </Text>
     </View>

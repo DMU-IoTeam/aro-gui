@@ -312,7 +312,7 @@ export default function HealthScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.headerBadge}>
-          <Text style={styles.headerIcon}>💙</Text>
+          <Image source={require('@/assets/images/health.png')} style={{width: 64, height: 64, resizeMode: 'contain'}}></Image>
         </View>
         <Text style={styles.title}>건강 상태 확인</Text>
         <Text style={styles.subtitle}>

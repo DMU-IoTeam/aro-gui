@@ -162,6 +162,7 @@ export const getMedicationSchedule = async (
     const response = await apiClient.get<MedicationSchedule[]>(
       `/api/medication/schedule/${seniorId}`,
     );
+    console.log('Fetched medication schedule:', response.data);
     return response.data;
   } catch (error) {
     console.error(`Error fetching medication schedule for senior ${seniorId}:`, error);

@@ -112,7 +112,7 @@ function IdleEyesModal({ visible, onRequestClose }: IdleEyesModalProps) {
 const styles = StyleSheet.create({
   backdrop: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.95)',
+    backgroundColor: 'rgba(0, 0, 0)',
     alignItems: 'center',
     justifyContent: 'center',
   },

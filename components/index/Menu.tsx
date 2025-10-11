@@ -29,6 +29,12 @@ const MENU_ITEMS = [
     contents: "약 복용 시간 알림",
     path: "Medicine",
   },
+  {
+    imageUrl: require("@/assets/images/notification.png"),
+    title: "일정확인",
+    contents: "약 복용 시간 알림",
+    path: "Schedule",
+  },
 ];
 
 const Menu = () => {
@@ -79,9 +85,10 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingHorizontal: 24,
     gap: 16,
+    flexWrap: "wrap",
   },
   card: {
-    flex: 1,
+    width: "48%",
     minWidth: 0,
     backgroundColor: "white",
     borderRadius: 22,
@@ -104,17 +111,17 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   icon: {
-    width: 36,
-    height: 36,
+    width: 42,
+    height: 42,
   },
   title: {
     color: Colors.font.default,
     fontWeight: "700",
-    fontSize: 18,
+    fontSize: 22,
   },
   subtitle: {
     color: Colors.font.gray,
-    fontSize: 14,
+    fontSize: 16,
     textAlign: "center",
     lineHeight: 18,
   },

@@ -12,6 +12,7 @@ import GameResultScreen from './screen/GameResultScreen';
 import HealthScreen from './screen/HealthScreen';
 import MedicineScreen from './screen/MedicineScreen';
 import ResisterScreen from './screen/ResisterScreen';
+import ScheduleScreen from './screen/ScheduleScreen';
 
 // Create the stack navigator
 const Stack = createNativeStackNavigator();
@@ -64,13 +65,14 @@ function App() {
   return (
     <NavigationContainer>
       <Stack.Navigator initialRouteName="Home">
-        <Stack.Screen name="Home" component={HomeScreen} />
+        <Stack.Screen name="Home" component={HomeScreen} options={{headerShown: false}} />
         <Stack.Screen name="Chat" component={ChatScreen} />
         <Stack.Screen name="Game" component={GameScreen} />
         <Stack.Screen name="GameResult" component={GameResultScreen} />
         <Stack.Screen name="Health" component={HealthScreen} />
         <Stack.Screen name="Medicine" component={MedicineScreen} />
-        <Stack.Screen name="Resister" component={ResisterScreen} />
+        <Stack.Screen name="Resister" component={ResisterScreen} options={{title: '보호자 연동'}}/>
+        <Stack.Screen name="Schedule" component={ScheduleScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );
