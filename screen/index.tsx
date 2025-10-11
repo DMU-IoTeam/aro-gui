@@ -2,8 +2,9 @@ import SafeAreaContainer from "@/components/Common/SafeAreaContainer";
 import Header from "@/components/index/Header";
 import Menu from "@/components/index/Menu";
 import Profile from "@/components/index/Profile";
+import IdleEyesModal from "@/components/Common/IdleEyesModal";
 import { getMe, User } from "@/api/user";
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigation } from "@react-navigation/native";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ActivityIndicator, View } from "react-native";
@@ -11,7 +12,32 @@ import { ActivityIndicator, View } from "react-native";
 export default function HomeScreen() {
   const [userInfo, setUserInfo] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [idleVisible, setIdleVisible] = useState(false);
   const navigation = useNavigation();
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
+
+  const idleTimeoutMs = useMemo(() => 60_000, []);
+
+  const clearTimer = useCallback(() => {
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+      timerRef.current = null;
+    }
+  }, []);
+
+  const scheduleTimer = useCallback(() => {
+    clearTimer();
+    timerRef.current = setTimeout(() => {
+      setIdleVisible(true);
+    }, idleTimeoutMs);
+  }, [clearTimer, idleTimeoutMs]);
+
+  const handleInteraction = useCallback(() => {
+    if (idleVisible) {
+      setIdleVisible(false);
+    }
+    scheduleTimer();
+  }, [idleVisible, scheduleTimer]);
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -34,7 +60,9 @@ export default function HomeScreen() {
     };
 
     checkAuth();
-  }, [navigation]);
+    scheduleTimer();
+    return clearTimer;
+  }, [clearTimer, navigation, scheduleTimer]);
 
   if (loading) {
     return (
@@ -48,9 +76,19 @@ export default function HomeScreen() {
 
   return (
     <SafeAreaContainer>
-      <Header />
-      <Profile name={userInfo?.name || ""} loading={loading} />
-      <Menu />
+      <View
+        style={{ flex: 1 }}
+        onStartShouldSetResponder={() => true}
+        onResponderGrant={handleInteraction}
+      >
+        <Header />
+        <Profile name={userInfo?.name || ""} loading={loading} />
+        <Menu />
+      </View>
+      <IdleEyesModal
+        visible={idleVisible}
+        onRequestClose={handleInteraction}
+      />
     </SafeAreaContainer>
   );
 }
