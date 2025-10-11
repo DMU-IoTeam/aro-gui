@@ -1,20 +1,16 @@
-import { Colors } from "@/constants/Colors";
+import React from "react";
 import { useNavigation } from "@react-navigation/native";
 import {
-  FlatList,
   Image,
   ImageSourcePropType,
   Pressable,
+  StyleSheet,
   Text,
+  View,
 } from "react-native";
+import { Colors } from "@/constants/Colors";
 
-const menueData = [
-  {
-    imageUrl: require("@/assets/images/chat.png"),
-    title: "대화하기",
-    contents: "ARO와 편하게 대화해요",
-    path: "Chat",
-  },
+const MENU_ITEMS = [
   {
     imageUrl: require("@/assets/images/game.png"),
     title: "게임하기",
@@ -37,58 +33,89 @@ const menueData = [
 
 const Menu = () => {
   return (
-    <FlatList
-      data={menueData}
-      renderItem={({ item }) => (
+    <View style={styles.container}>
+      {MENU_ITEMS.map((item) => (
         <MenuItem
+          key={item.path}
           imageUrl={item.imageUrl}
           title={item.title}
           contents={item.contents}
           path={item.path}
         />
-      )}
-      keyExtractor={(item, index) => index.toString()}
-      numColumns={2}
-      columnWrapperStyle={{
-        justifyContent: "center",
-        gap: 16,
-        marginBottom: 16,
-      }}
-    />
+      ))}
+    </View>
   );
 };
 
-type MenueItemProps = {
+type MenuItemProps = {
   imageUrl: ImageSourcePropType;
   title: string;
   contents: string;
   path: string;
 };
 
-const MenuItem = ({ imageUrl, title, contents, path }: MenueItemProps) => {
+const MenuItem = ({ imageUrl, title, contents, path }: MenuItemProps) => {
   const navigation = useNavigation();
 
   return (
     <Pressable
       onPress={() => navigation.navigate(path as never)}
-      style={{
-        justifyContent: "center",
-        alignItems: "center",
-        backgroundColor: "white",
-        borderRadius: 20,
-        width: "40%",
-        aspectRatio: 1,
-      }}
+      style={styles.card}
     >
-      <Image source={imageUrl} />
-      <Text
-        style={{ color: Colors.font.default, fontWeight: "700", fontSize: 32 }}
-      >
-        {title}
-      </Text>
-      <Text style={{ color: Colors.font.gray, fontSize: 16 }}>{contents}</Text>
+      <View style={styles.iconWrapper}>
+        <Image source={imageUrl} style={styles.icon} resizeMode="contain" />
+      </View>
+      <Text style={styles.title}>{title}</Text>
+      <Text style={styles.subtitle}>{contents}</Text>
     </Pressable>
   );
 };
 
 export default Menu;
+
+const styles = StyleSheet.create({
+  container: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    paddingHorizontal: 24,
+    gap: 16,
+  },
+  card: {
+    flex: 1,
+    minWidth: 0,
+    backgroundColor: "white",
+    borderRadius: 22,
+    paddingVertical: 18,
+    paddingHorizontal: 12,
+    alignItems: "center",
+    gap: 10,
+    shadowColor: "#0F172A",
+    shadowOpacity: 0.08,
+    shadowRadius: 18,
+    shadowOffset: { width: 0, height: 12 },
+    elevation: 3,
+  },
+  iconWrapper: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: "#EEF2FF",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  icon: {
+    width: 36,
+    height: 36,
+  },
+  title: {
+    color: Colors.font.default,
+    fontWeight: "700",
+    fontSize: 18,
+  },
+  subtitle: {
+    color: Colors.font.gray,
+    fontSize: 14,
+    textAlign: "center",
+    lineHeight: 18,
+  },
+});
