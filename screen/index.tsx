@@ -16,7 +16,7 @@ export default function HomeScreen() {
   const navigation = useNavigation();
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
-  const idleTimeoutMs = useMemo(() => 60_000, []);
+  const idleTimeoutMs = useMemo(() => 60_000_000, []);
 
   const clearTimer = useCallback(() => {
     if (timerRef.current) {

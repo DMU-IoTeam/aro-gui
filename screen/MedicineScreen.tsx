@@ -1,6 +1,14 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, StyleSheet, Text, View } from 'react-native';
-import CommonHeader from '@/components/Common/CommonHeader';
+import {
+  ActivityIndicator,
+  Alert,
+  Image,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 import SafeAreaContainer from '@/components/Common/SafeAreaContainer';
 import DailyMedicine, {
   type DailyMedicineSelection,
@@ -21,14 +29,6 @@ type DailyMedicineItem = {
   itemId?: number;
 };
 
-const fallbackData: DailyMedicineItem[] = [
-  {
-    title: '등록된 복약 일정이 없어요',
-    imageUrl: require('@/assets/images/health-icon1.png'),
-    contents: '관리자에게 복약 일정을 등록해달라고 요청해보세요.',
-  },
-];
-
 const formatTime = (time: string) => {
   if (!time) {
     return '복용 시간 정보가 없어요';
@@ -38,7 +38,7 @@ const formatTime = (time: string) => {
 };
 
 export default function MedicineScreen() {
-  const [items, setItems] = useState<DailyMedicineItem[]>(fallbackData);
+  const [items, setItems] = useState<DailyMedicineItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selections, setSelections] = useState<Record<number, DailyMedicineSelection>>({});
@@ -81,17 +81,16 @@ export default function MedicineScreen() {
         const schedules = await getMedicationSchedule(user.id);
         if (schedules && schedules.length > 0) {
           const transformed = transformSchedule(schedules);
-          const nextItems = transformed.length > 0 ? transformed : fallbackData;
-          setItems(nextItems);
+          setItems(transformed);
           setSelections({});
         } else {
-          setItems(fallbackData);
+          setItems([]);
           setSelections({});
         }
       } catch (err) {
         console.error('Failed to fetch medication schedule:', err);
         setError('복약 정보를 불러오는 중 문제가 발생했어요. 잠시 후 다시 시도해주세요.');
-        setItems(fallbackData);
+        setItems([]);
         setSelections({});
       } finally {
         setLoading(false);
@@ -153,70 +152,116 @@ export default function MedicineScreen() {
       setSubmitting(false);
       navigation.navigate('Home' as never); // 복약 기록 후 홈으로 이동
     }
-  }, [confirmTargets]);
+  }, [confirmTargets, navigation]);
 
   const isConfirmDisabled = submitting || confirmTargets.length === 0;
 
+  const renderHeader = () => (
+    <>
+      <View style={styles.headerBadge}>
+        <Image
+          source={require('@/assets/images/medicine.png')}
+          style={styles.headerIcon}
+          resizeMode="contain"
+        />
+      </View>
+      <Text style={styles.title}>복약 상태 확인</Text>
+    </>
+  );
+
   if (loading) {
     return (
-      <SafeAreaContainer>
-        <CommonHeader
-          imageUrl={require('@/assets/images/medicine-no-bg.png')}
-          title="복약 알림"
-          contents={`현재 시각: ${currentTimeLabel}`}
-        />
-        <View style={styles.centeredContainer}>
-          <ActivityIndicator size="large" color="#2563EB" />
-          <Text style={styles.centeredText}>복약 정보를 불러오는 중이에요...</Text>
-        </View>
+      <SafeAreaContainer style={styles.safeArea}>
+        <ScrollView contentContainerStyle={styles.loadingContent}>
+          {renderHeader()}
+          <View style={styles.stateContainer}>
+            <ActivityIndicator size="large" color="#2563EB" />
+            <Text style={styles.stateText}>복약 정보를 불러오는 중이에요...</Text>
+          </View>
+        </ScrollView>
       </SafeAreaContainer>
     );
   }
 
   return (
-    <SafeAreaContainer>
-      <CommonHeader
-        imageUrl={require('@/assets/images/medicine-no-bg.png')}
-        title="복약 알림"
-        contents={`현재 시각: ${currentTimeLabel}`}
-      />
-      {error ? (
-        <View style={styles.errorContainer}>
-          <Text style={styles.errorText}>{error}</Text>
-        </View>
-      ) : null}
-      <DailyMedicine
-        title="오늘 복약을 확인해주세요"
-        contents={items}
-        selections={selections}
-        onSelect={handleSelect}
-      />
-      <Pressable
-        style={[styles.confirmButton, isConfirmDisabled && styles.confirmButtonDisabled]}
-        onPress={handleConfirm}
-        disabled={isConfirmDisabled}
-      >
-        {submitting ? (
-          <ActivityIndicator color="#FFFFFF" />
+    <SafeAreaContainer style={styles.safeArea}>
+      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        {renderHeader()}
+        {error ? (
+          <View style={styles.errorContainer}>
+            <Text style={styles.errorText}>{error}</Text>
+          </View>
+        ) : items.length === 0 ? (
+          <View style={styles.stateContainer}>
+            <Text style={styles.stateText}>복약 일정이 없습니다.</Text>
+            <Text style={styles.stateDescription}>
+              복약 일정을 등록하면 이곳에서 확인할 수 있어요.
+            </Text>
+          </View>
         ) : (
-          <Text style={styles.confirmButtonText}>복약 완료 기록하기</Text>
+          <DailyMedicine
+            title="오늘 복약을 확인해주세요"
+            contents={items}
+            selections={selections}
+            onSelect={handleSelect}
+          />
         )}
-      </Pressable>
+        <Pressable
+          style={[styles.confirmButton, isConfirmDisabled && styles.confirmButtonDisabled]}
+          onPress={handleConfirm}
+          disabled={isConfirmDisabled}
+        >
+          {submitting ? (
+            <ActivityIndicator color="#FFFFFF" />
+          ) : (
+            <Text style={styles.confirmButtonText}>복약 완료 기록하기</Text>
+          )}
+        </Pressable>
+      </ScrollView>
     </SafeAreaContainer>
   );
 }
 
 const styles = StyleSheet.create({
-  centeredContainer: {
+  safeArea: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 24,
+    backgroundColor: '#F4F7FB',
   },
-  centeredText: {
+  content: {
+    paddingBottom: 32,
+    gap: 20,
+  },
+  loadingContent: {
+    paddingBottom: 32,
+    alignItems: 'center',
+    gap: 20,
+  },
+  headerBadge: {
+    alignSelf: 'center',
     marginTop: 16,
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    backgroundColor: '#DBEAFE',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  headerIcon: {
+    width: 42,
+    height: 42,
+  },
+  title: {
+    marginTop: 24,
+    textAlign: 'center',
+    fontSize: 28,
+    fontWeight: '700',
+    color: '#0F172A',
+  },
+  subtitle: {
+    marginTop: 8,
+    textAlign: 'center',
     fontSize: 16,
-    color: '#475569',
+    color: '#64748B',
   },
   errorContainer: {
     marginHorizontal: 24,
@@ -229,6 +274,33 @@ const styles = StyleSheet.create({
     color: '#DC2626',
     fontSize: 14,
     textAlign: 'center',
+  },
+  stateContainer: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 22,
+    paddingVertical: 30,
+    paddingHorizontal: 24,
+    alignItems: 'center',
+    gap: 12,
+    marginHorizontal: 24,
+    marginTop: 16,
+    shadowColor: '#0F172A',
+    shadowOpacity: 0.06,
+    shadowRadius: 18,
+    shadowOffset: { width: 0, height: 12 },
+    elevation: 2,
+  },
+  stateText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#0F172A',
+    textAlign: 'center',
+  },
+  stateDescription: {
+    fontSize: 13,
+    color: '#64748B',
+    textAlign: 'center',
+    lineHeight: 18,
   },
   confirmButton: {
     marginHorizontal: 24,
