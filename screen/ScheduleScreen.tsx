@@ -1,5 +1,13 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import {
+  ActivityIndicator,
+  Image,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 import SafeAreaContainer from '@/components/Common/SafeAreaContainer';
 import { getSchedulesBySenior, type SeniorSchedule } from '@/api/schedule';
 import { getMe } from '@/api/user';
@@ -52,14 +60,16 @@ export default function ScheduleScreen() {
         throw new Error('로그인 정보에서 시니어 ID를 찾을 수 없어요.');
       }
       const schedules = await getSchedulesBySenior(user.id);
-      const mapped = schedules.map((schedule) => ({
+      const mapped = schedules.map(schedule => ({
         ...schedule,
         status: deriveStatus(schedule),
       }));
       setItems(mapped);
     } catch (err) {
       console.error('Failed to fetch schedules:', err);
-      setError('오늘 일정을 불러오는 중 문제가 발생했어요. 잠시 후 다시 시도해주세요.');
+      setError(
+        '오늘 일정을 불러오는 중 문제가 발생했어요. 잠시 후 다시 시도해주세요.',
+      );
       setItems([]);
     } finally {
       setLoading(false);
@@ -71,8 +81,8 @@ export default function ScheduleScreen() {
   }, [fetchSchedules]);
 
   const summary = useMemo(() => {
-    const completed = items.filter((item) => item.status === '완료').length;
-    const progress = items.filter((item) => item.status === '진행중').length;
+    const completed = items.filter(item => item.status === '완료').length;
+    const progress = items.filter(item => item.status === '진행중').length;
     const streak = 7;
     return { completed, progress, streak };
   }, [items]);
@@ -106,45 +116,67 @@ export default function ScheduleScreen() {
       );
     }
 
-    return items.map((activity) => (
-      <View key={activity.id} style={styles.activityCard}>
-        <View style={styles.activityLeft}>
-          <View style={[styles.activityIconWrapper, { backgroundColor: `${STATUS_COLORS[activity.status]}22` }] }>
-            <Text style={[styles.activityIcon, { color: STATUS_COLORS[activity.status] }]}>
-              ●
-            </Text>
-          </View>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.activityTitle}>{activity.title}</Text>
-            <Text style={styles.activityDescription}>{activity.memo || '건강을 생각해요'}</Text>
-            <Text style={[styles.activityRecommendation, { color: STATUS_COLORS[activity.status] }]}>
-              {new Date(activity.startTime).toLocaleTimeString('ko-KR', {
-                hour: '2-digit',
-                minute: '2-digit',
-              })} 시작
-            </Text>
+    return items.map((activity, index) => {
+      const iconSource =
+        index % 2 === 0
+          ? require('@/assets/images/activity1.png')
+          : require('@/assets/images/activity2.png');
+
+      return (
+        <View key={activity.id} style={styles.activityCard}>
+          <View style={styles.activityLeft}>
+            <View
+              style={[
+                styles.activityIconWrapper,
+                { backgroundColor: `${STATUS_COLORS[activity.status]}22` },
+              ]}
+            >
+              <Image
+                source={iconSource}
+                style={styles.activityIcon}
+                resizeMode="contain"
+              />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.activityTitle}>{activity.title}</Text>
+              <Text style={styles.activityDescription}>
+                {activity.memo || '건강을 생각해요'}
+              </Text>
+              <Text
+                style={[
+                  styles.activityRecommendation,
+                  { color: STATUS_COLORS[activity.status] },
+                ]}
+              >
+                {new Date(activity.startTime).toLocaleTimeString('ko-KR', {
+                  hour: '2-digit',
+                  minute: '2-digit',
+                })}
+              </Text>
+            </View>
           </View>
         </View>
-        <View style={styles.activityStatusBadge}>
-          <Text style={[styles.activityStatusText, { color: STATUS_COLORS[activity.status] }]}>
-            {activity.status}
-          </Text>
-        </View>
-      </View>
-    ));
+      );
+    });
   };
 
   return (
     <SafeAreaContainer style={styles.safeArea}>
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+      >
         <View style={styles.headerBadge}>
-          <Text style={styles.headerIcon}>💚</Text>
+          <Image
+            source={require('@/assets/images/schedule.png')}
+            style={styles.headerIcon}
+            resizeMode="contain"
+          ></Image>
         </View>
         <Text style={styles.title}>일정 확인</Text>
         <Text style={styles.subtitle}>오늘의 일정을 확인해보세요</Text>
 
         <View style={styles.cardList}>{renderActivities()}</View>
-
       </ScrollView>
     </SafeAreaContainer>
   );
@@ -161,27 +193,24 @@ const styles = StyleSheet.create({
   headerBadge: {
     alignSelf: 'center',
     marginTop: 16,
-    width: 72,
-    height: 72,
-    borderRadius: 36,
-    backgroundColor: '#D1FAE5',
     alignItems: 'center',
     justifyContent: 'center',
   },
   headerIcon: {
-    fontSize: 34,
+    width: 80,
+    height: 80,
   },
   title: {
     marginTop: 20,
     textAlign: 'center',
-    fontSize: 28,
+    fontSize: 40,
     fontWeight: '700',
     color: '#0F172A',
   },
   subtitle: {
     marginTop: 6,
     textAlign: 'center',
-    fontSize: 16,
+    fontSize: 36,
     color: '#64748B',
   },
   cardList: {
@@ -210,28 +239,29 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   activityIconWrapper: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+    width: 80,
+    height: 80,
+    borderRadius: 9999,
     alignItems: 'center',
     justifyContent: 'center',
   },
   activityIcon: {
-    fontSize: 20,
+    width: 80,
+    height: 80,
   },
   activityTitle: {
-    fontSize: 18,
+    fontSize: 32,
     fontWeight: '700',
     color: '#0F172A',
   },
   activityDescription: {
     marginTop: 4,
-    fontSize: 14,
+    fontSize: 28,
     color: '#64748B',
   },
   activityRecommendation: {
     marginTop: 6,
-    fontSize: 14,
+    fontSize: 24,
     fontWeight: '600',
   },
   activityStatusBadge: {
@@ -348,4 +378,3 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
 });
-

@@ -247,20 +247,19 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   headerIcon: {
-    width: 42,
-    height: 42,
+    width: 80,
+    height: 80,
   },
   title: {
-    marginTop: 24,
     textAlign: 'center',
-    fontSize: 28,
+    fontSize: 36,
     fontWeight: '700',
     color: '#0F172A',
   },
   subtitle: {
     marginTop: 8,
     textAlign: 'center',
-    fontSize: 16,
+    fontSize: 36,
     color: '#64748B',
   },
   errorContainer: {
@@ -306,7 +305,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 24,
     marginTop: 12,
     marginBottom: 24,
-    height: 52,
+    height: 104,
     borderRadius: 16,
     backgroundColor: '#2563EB',
     justifyContent: 'center',
@@ -317,7 +316,7 @@ const styles = StyleSheet.create({
   },
   confirmButtonText: {
     color: '#FFFFFF',
-    fontSize: 16,
+    fontSize: 28,
     fontWeight: '700',
   },
 });

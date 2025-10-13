@@ -13,7 +13,7 @@ export const getSchedulesBySenior = async (
   try {
     console.log(`Fetching schedules for senior ${seniorId}`);
     const response = await apiClient.get<SeniorSchedule[]>(
-      `/api/schedules/senior/${seniorId}`,
+      `/api/schedules/me`,
     );
     return response.data;
   } catch (error) {
