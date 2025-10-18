@@ -168,7 +168,7 @@ export default function ScheduleScreen() {
       >
         <View style={styles.headerBadge}>
           <Image
-            source={require('@/assets/images/schedule.png')}
+            source={require('@/assets/images/calendar.png')}
             style={styles.headerIcon}
             resizeMode="contain"
           ></Image>

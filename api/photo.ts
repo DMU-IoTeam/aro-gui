@@ -4,6 +4,7 @@ export interface SeniorPhoto {
   photoId: number;
   imageUrl: string;
   caption: string;
+  distractorOptions?: string;
 }
 
 export interface CheckAnswerPayload {

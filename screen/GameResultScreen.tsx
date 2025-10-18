@@ -138,7 +138,7 @@ export default function GameResultScreen() {
       >
         <View style={styles.header}>
           <View style={styles.headerIcon}>
-            <Text style={styles.headerIconEmoji}>🏆</Text>
+              <Image source={require('@/assets/images/trophy.png')} />
           </View>
           <Text style={styles.headerTitle}>게임 완료!</Text>
           <Text style={styles.headerSubtitle}>
@@ -153,105 +153,23 @@ export default function GameResultScreen() {
         <View style={styles.summaryRow}>
           <View style={styles.summaryItem}>
             <View style={[styles.summaryIcon, { backgroundColor: '#E0F2FE' }]}>
-              <Text style={styles.summaryIconText}>✅</Text>
+              <Image source={require('@/assets/images/check-green.png')} />
             </View>
             <Text style={styles.summaryValue}>{correct}개</Text>
             <Text style={styles.summaryLabel}>정답</Text>
           </View>
           <View style={styles.summaryItem}>
             <View style={[styles.summaryIcon, { backgroundColor: '#FEE2E2' }]}>
-              <Text style={styles.summaryIconText}>❌</Text>
+              <Image source={require('@/assets/images/close-red.png')} />
             </View>
             <Text style={styles.summaryValue}>{incorrect}개</Text>
             <Text style={styles.summaryLabel}>오답</Text>
-          </View>
-          <View style={styles.summaryItem}>
-            <View style={[styles.summaryIcon, { backgroundColor: '#FEF3C7' }]}>
-              <Text style={styles.summaryIconText}>💡</Text>
-            </View>
-            <Text style={styles.summaryValue}>{hints}개</Text>
-            <Text style={styles.summaryLabel}>힌트 사용</Text>
-          </View>
-        </View>
-
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>획득한 배지</Text>
-          <View style={styles.badgeRow}>
-            {badgeData.map((badge) => (
-              <View
-                key={badge.id}
-                style={[
-                  styles.badgeCard,
-                  badge.achieved ? styles.badgeActive : styles.badgeInactive,
-                ]}
-              >
-                <View
-                  style={[
-                    styles.badgeIconWrapper,
-                    { backgroundColor: badge.color },
-                  ]}
-                >
-                  <Text style={styles.badgeIcon}>
-                    {badge.achieved ? '⭐' : '🔒'}
-                  </Text>
-                </View>
-                <Text style={styles.badgeTitle}>{badge.title}</Text>
-                <Text style={styles.badgeDescription}>{badge.description}</Text>
-              </View>
-            ))}
-          </View>
-        </View>
-
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>가족 순위</Text>
-          <View style={styles.rankingList}>
-            {rankingData.map((item, index) => (
-              <View
-                key={item.id}
-                style={[
-                  styles.rankingItem,
-                  {
-                    borderColor: item.accentColor,
-                    backgroundColor: item.isSelf
-                      ? '#EFF6FF'
-                      : index === 0
-                      ? '#FEF3C7'
-                      : index === 2
-                      ? '#FEE2E2'
-                      : '#FFFFFF',
-                  },
-                ]}
-              >
-                <View style={styles.rankingLeft}>
-                  <View
-                    style={[
-                      styles.rankingPosition,
-                      { backgroundColor: item.accentColor },
-                    ]}
-                  >
-                    <Text style={styles.rankingPositionText}>
-                      {index + 1}
-                    </Text>
-                  </View>
-                  <View>
-                    <Text style={styles.rankingName}>{item.name}</Text>
-                    <Text style={styles.rankingSubtitle}>
-                      {item.score}점 · {item.subtitle}
-                    </Text>
-                  </View>
-                </View>
-                <Text style={styles.rankingIcon}>{item.icon ?? '🏅'}</Text>
-              </View>
-            ))}
           </View>
         </View>
 
         <View style={styles.footerButtons}>
           <Pressable style={[styles.footerButton, styles.footerReplay]} onPress={handleReplay}>
             <Text style={styles.footerButtonText}>다시 플레이</Text>
-          </Pressable>
-          <Pressable style={[styles.footerButton, styles.footerShare]} onPress={handleShare}>
-            <Text style={styles.footerButtonText}>결과 공유</Text>
           </Pressable>
           <Pressable style={[styles.footerButton, styles.footerHome]} onPress={handleGoHome}>
             <Text style={styles.footerButtonText}>홈으로</Text>
@@ -279,7 +197,6 @@ const styles = StyleSheet.create({
     width: 72,
     height: 72,
     borderRadius: 36,
-    backgroundColor: '#10B981',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 16,

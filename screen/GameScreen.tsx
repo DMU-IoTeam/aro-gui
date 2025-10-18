@@ -1,10 +1,4 @@
-import React, {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Image,
@@ -24,7 +18,6 @@ import {
 import { getMe } from '@/api/user';
 import apiClient from '@/api';
 import { useNavigation } from '@react-navigation/native';
-import useSpeechRecognition from '@/hooks/useSpeechRecognition';
 
 const SCORE_PER_CORRECT = 10;
 const ADVANCE_DELAY_MS = 1100;
@@ -37,6 +30,11 @@ type GameResultParams = {
   hints: number;
 };
 
+type Choice = {
+  id: string;
+  label: string;
+};
+
 export default function GameScreen() {
   const navigation = useNavigation();
   const [photos, setPhotos] = useState<SeniorPhoto[]>([]);
@@ -44,47 +42,27 @@ export default function GameScreen() {
   const [score, setScore] = useState(0);
   const [correctCount, setCorrectCount] = useState(0);
   const [incorrectCount, setIncorrectCount] = useState(0);
-  const [hintUsedCount, setHintUsedCount] = useState(0);
-  const [recognizedText, setRecognizedText] = useState('');
-  const [showHint, setShowHint] = useState(false);
-  const [hintUsedCurrent, setHintUsedCurrent] = useState(false);
+  const [hintUsedCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [answerChecking, setAnswerChecking] = useState(false);
   const [feedback, setFeedback] = useState<string | null>(null);
+  const [selectedChoice, setSelectedChoice] = useState<string | null>(null);
   const advanceTimerRef = useRef<NodeJS.Timeout | null>(null);
-
-  const {
-    transcript,
-    isListening,
-    status: speechStatus,
-    error: speechError,
-    isSupported: isSpeechSupported,
-    startListening,
-    stopListening,
-    cancelListening,
-    resetRecognition,
-  } = useSpeechRecognition();
-
-  useEffect(() => {
-    setRecognizedText(transcript);
-  }, [transcript]);
 
   const photoCount = photos.length;
   const hasPhotos = photoCount > 0;
   const currentQuestion = hasPhotos ? currentIndex + 1 : 0;
   const progressValue = hasPhotos ? currentQuestion / photoCount : 0;
   const currentPhoto = hasPhotos ? photos[currentIndex] : undefined;
-  const currentCaption = currentPhoto?.caption ?? '';
 
-  useEffect(
-    () => () => {
+  useEffect(() => {
+    return () => {
       if (advanceTimerRef.current) {
         clearTimeout(advanceTimerRef.current);
       }
-    },
-    [],
-  );
+    };
+  }, []);
 
   const resolveImageUrl = useCallback((imageUrl?: string) => {
     if (!imageUrl) {
@@ -98,15 +76,12 @@ export default function GameScreen() {
     const { defaults } = apiClient;
     const baseURL = defaults?.baseURL ?? 'http://10.0.2.2:8080';
     return `${baseURL.replace(/\/$/, '')}/${imageUrl.replace(/^\//, '')}`;
-  }, [resetRecognition]);
+  }, []);
 
   const resetQuestionState = useCallback(() => {
-    setRecognizedText('');
-    setShowHint(false);
-    setHintUsedCurrent(false);
     setFeedback(null);
-    void resetRecognition();
-  }, [resetRecognition]);
+    setSelectedChoice(null);
+  }, []);
 
   const navigateToResult = useCallback(
     (params: GameResultParams) => {
@@ -132,11 +107,7 @@ export default function GameScreen() {
       setScore(0);
       setCorrectCount(0);
       setIncorrectCount(0);
-      setHintUsedCount(0);
-      setRecognizedText('');
-      setShowHint(false);
-      setHintUsedCurrent(false);
-      await resetRecognition();
+      resetQuestionState();
     } catch (err) {
       console.error('Failed to load senior photos:', err);
       setPhotos([]);
@@ -144,7 +115,7 @@ export default function GameScreen() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [resetQuestionState]);
 
   useEffect(() => {
     loadPhotos();
@@ -157,93 +128,14 @@ export default function GameScreen() {
     return `${currentQuestion}/${photoCount}`;
   }, [currentQuestion, hasPhotos, photoCount]);
 
-  const primaryListeningMessage = useMemo(() => {
-    if (!isSpeechSupported) {
-      return '이 기기에서는 음성 인식을 사용할 수 없어요.';
-    }
-    switch (speechStatus) {
-      case 'starting':
-        return '마이크를 준비하고 있어요...';
-      case 'listening':
-        return '음성을 듣고 있어요...';
-      case 'processing':
-        return '음성을 처리 중이에요...';
-      case 'error':
-        return speechError ?? '음성 인식 중 문제가 발생했어요.';
-      default:
-        return '마이크 버튼을 눌러 시작하세요';
-    }
-  }, [isSpeechSupported, speechError, speechStatus]);
-
-  const secondaryListeningMessage = useMemo(() => {
-    if (!isSpeechSupported) {
-      return '텍스트 입력 기능을 준비 중이에요.';
-    }
-    if (speechStatus === 'processing') {
-      return '조금만 기다려주세요...';
-    }
-    return isListening
-      ? '말씀이 끝나면 마이크를 다시 눌러주세요'
-      : '마이크 버튼을 눌러 답변하세요';
-  }, [isListening, isSpeechSupported, speechStatus]);
-
-  const toggleHint = useCallback(() => {
-    if (!hasPhotos || loading) {
-      return;
-    }
-    setShowHint((prev) => {
-      const next = !prev;
-      if (next && !hintUsedCurrent) {
-        setHintUsedCount((count) => count + 1);
-        setHintUsedCurrent(true);
-      }
-      return next;
-    });
-  }, [hasPhotos, hintUsedCurrent, loading]);
-
-  const toggleListening = useCallback(async () => {
-    if (!hasPhotos || loading || !isSpeechSupported) {
-      return;
-    }
-
-    try {
-      if (isListening) {
-        await stopListening();
-      } else {
-        await resetRecognition();
-        setRecognizedText('');
-        setFeedback(null);
-        await startListening();
-      }
-    } catch (err) {
-      console.error('Failed to toggle listening:', err);
-    }
-  }, [
-    hasPhotos,
-    isListening,
-    loading,
-    resetRecognition,
-    startListening,
-    stopListening,
-    isSpeechSupported,
-  ]);
-
-  const handleRetake = useCallback(async () => {
-    if (!hasPhotos || loading || !isSpeechSupported) {
-      return;
-    }
-    setRecognizedText('');
-    setFeedback(null);
-    try {
-      await resetRecognition();
-      await startListening();
-    } catch (err) {
-      console.error('Failed to retake recording:', err);
-    }
-  }, [hasPhotos, isSpeechSupported, loading, resetRecognition, startListening]);
-
   const advanceToNext = useCallback(
-    (nextIndex: number, nextScore: number, nextCorrect: number, nextIncorrect: number, nextHints: number) => {
+    (
+      nextIndex: number,
+      nextScore: number,
+      nextCorrect: number,
+      nextIncorrect: number,
+      nextHints: number,
+    ) => {
       if (nextIndex >= photoCount) {
         navigateToResult({
           score: nextScore,
@@ -254,30 +146,21 @@ export default function GameScreen() {
         });
         return;
       }
-      cancelListening().catch(() => null);
       setCurrentIndex(nextIndex);
       resetQuestionState();
     },
-    [cancelListening, navigateToResult, photoCount, resetQuestionState],
+    [navigateToResult, photoCount, resetQuestionState],
   );
 
   const submitAnswer = useCallback(async () => {
-    if (
-      !hasPhotos ||
-      loading ||
-      answerChecking ||
-      !recognizedText.trim() ||
-      !currentPhoto?.photoId
-    ) {
+    if (!hasPhotos || loading || answerChecking || !selectedChoice || !currentPhoto?.photoId) {
       return;
     }
 
     try {
       setAnswerChecking(true);
-      await stopListening().catch(() => null);
-      const trimmedAnswer = recognizedText.trim();
       const response = await checkPhotoAnswer(currentPhoto.photoId, {
-        answer: trimmedAnswer,
+        answer: selectedChoice,
       });
       const isCorrect = response?.isCorrect ?? false;
 
@@ -324,18 +207,17 @@ export default function GameScreen() {
       setAnswerChecking(false);
     }
   }, [
+    answerChecking,
     advanceToNext,
+    correctCount,
     currentIndex,
     currentPhoto?.photoId,
-    correctCount,
     hasPhotos,
     hintUsedCount,
     incorrectCount,
     loading,
-    recognizedText,
     score,
-    stopListening,
-    answerChecking,
+    selectedChoice,
   ]);
 
   const handleSubmit = useCallback(() => {
@@ -347,20 +229,12 @@ export default function GameScreen() {
       return;
     }
 
-    cancelListening().catch(() => null);
     setFeedback(null);
     const updatedIncorrect = incorrectCount + 1;
     setIncorrectCount(updatedIncorrect);
-    advanceToNext(
-      currentIndex + 1,
-      score,
-      correctCount,
-      updatedIncorrect,
-      hintUsedCount,
-    );
+    advanceToNext(currentIndex + 1, score, correctCount, updatedIncorrect, hintUsedCount);
   }, [
     advanceToNext,
-    cancelListening,
     correctCount,
     currentIndex,
     hasPhotos,
@@ -370,8 +244,38 @@ export default function GameScreen() {
     score,
   ]);
 
+  const handleSelectChoice = useCallback((label: string) => {
+    setSelectedChoice((prev) => (prev === label ? null : label));
+    setFeedback(null);
+  }, []);
+
   const photoUri = resolveImageUrl(currentPhoto?.imageUrl);
-  const micDisabled = !hasPhotos || loading || !isSpeechSupported;
+
+  const choices: Choice[] = useMemo(() => {
+    if (!currentPhoto) {
+      return [];
+    }
+    const answer = currentPhoto.caption?.trim();
+    const distractors = currentPhoto.distractorOptions
+      ?.split(',')
+      .map((item) => item.trim())
+      .filter(Boolean);
+
+    const pool = [
+      ...(answer ? [answer] : []),
+      ...(distractors ?? []),
+    ];
+
+    return pool
+      .map((label, index) => ({
+        id: `${currentPhoto.photoId}-${index}`,
+        label,
+      }))
+      .sort(() => Math.random() - 0.5);
+  }, [currentPhoto]);
+
+  const isSubmitDisabled = !selectedChoice || answerChecking;
+  const isSkipDisabled = answerChecking || !hasPhotos;
 
   return (
     <SafeAreaContainer style={styles.safeArea}>
@@ -390,7 +294,7 @@ export default function GameScreen() {
           <View style={styles.headerTextContainer}>
             <Text style={styles.headerTitle}>가족사진 맞히기 게임</Text>
             <Text style={styles.headerSubtitle}>
-              사진을 보고 음성으로 답해보세요!
+              사진을 보고 정답을 골라보세요!
             </Text>
           </View>
         </View>
@@ -445,40 +349,29 @@ export default function GameScreen() {
           이 사진 속 인물은 누구일까요?
         </Text>
 
-        <View style={styles.voiceCard}>
-          <Pressable
-            onPress={toggleListening}
-            disabled={micDisabled}
-            style={[
-              styles.micButton,
-              isListening ? styles.micButtonActive : undefined,
-              micDisabled && styles.disabledButton,
-            ]}
-          >
-            <Image
-              source={require('@/assets/images/mic-button.png')}
-              style={styles.micImage}
-            />
-          </Pressable>
-          <View style={styles.voiceTextWrapper}>
-            <Text style={styles.voicePrimaryText}>
-              {primaryListeningMessage}
-            </Text>
-            <Text style={styles.voiceSecondaryText}>
-              {secondaryListeningMessage}
-            </Text>
-          </View>
-        </View>
-
-        {speechError ? (
-          <Text style={styles.speechErrorText}>{speechError}</Text>
-        ) : null}
-
-        <View style={styles.answerCard}>
-          <Text style={styles.answerLabel}>인식된 답변</Text>
-          <Text style={styles.answerText}>
-            {recognizedText || '아직 답변이 인식되지 않았어요'}
-          </Text>
+        <View style={styles.choiceList}>
+          {choices.map((choice) => {
+            const isSelected = selectedChoice === choice.label;
+            return (
+              <Pressable
+                key={choice.id}
+                style={[
+                  styles.choiceButton,
+                  isSelected && styles.choiceButtonSelected,
+                ]}
+                onPress={() => handleSelectChoice(choice.label)}
+              >
+                <Text
+                  style={[
+                    styles.choiceLabel,
+                    isSelected && styles.choiceLabelSelected,
+                  ]}
+                >
+                  {choice.label}
+                </Text>
+              </Pressable>
+            );
+          })}
         </View>
 
         {feedback ? (
@@ -494,65 +387,30 @@ export default function GameScreen() {
           </View>
         ) : null}
 
-        <Pressable
-          style={[
-            styles.hintCard,
-            showHint && styles.hintCardActive,
-            (!hasPhotos || loading) && styles.disabledButton,
-          ]}
-          onPress={toggleHint}
-          disabled={!hasPhotos || loading}
-        >
-          <View style={styles.hintIconWrapper}>
-            <Text style={styles.hintIcon}>💡</Text>
-          </View>
-          <View style={styles.hintTextWrapper}>
-            <Text style={styles.hintTitle}>힌트 보기</Text>
-            <Text style={styles.hintDescription}>
-              {showHint
-                ? currentCaption || '힌트를 준비 중이에요.'
-                : '어려우면 힌트를 확인해보세요'}
-            </Text>
-          </View>
-          <Text style={styles.hintArrow}>{showHint ? '‹' : '›'}</Text>
-        </Pressable>
-
         <View style={styles.actionRow}>
           <Pressable
             style={[
               styles.actionButton,
-              styles.secondaryButton,
-              micDisabled && styles.disabledButton,
-            ]}
-            onPress={handleRetake}
-            disabled={micDisabled}
-          >
-            <Text style={styles.secondaryButtonText}>다시 말하기</Text>
-          </Pressable>
-          <Pressable
-            style={[
-              styles.actionButton,
               styles.primaryButton,
-              (!hasPhotos || loading || !recognizedText.trim()) &&
-                styles.disabledButton,
+              isSubmitDisabled && styles.disabledButton,
             ]}
             onPress={handleSubmit}
-            disabled={!hasPhotos || loading || !recognizedText.trim()}
+            disabled={isSubmitDisabled}
           >
             {answerChecking ? (
               <ActivityIndicator color="#FFFFFF" />
             ) : (
-              <Text style={styles.primaryButtonText}>답변 제출하기</Text>
+              <Text style={styles.primaryButtonText}>정답 제출하기</Text>
             )}
           </Pressable>
           <Pressable
             style={[
               styles.actionButton,
               styles.dangerButton,
-              (!hasPhotos || loading) && styles.disabledButton,
+              isSkipDisabled && styles.disabledButton,
             ]}
             onPress={handleSkip}
-            disabled={!hasPhotos || loading}
+            disabled={isSkipDisabled}
           >
             <Text style={styles.dangerButtonText}>건너뛰기</Text>
           </Pressable>
@@ -573,11 +431,12 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingHorizontal: 20,
     paddingVertical: 16,
+    gap: 20,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 20,
+    marginBottom: 12,
   },
   headerIcon: {
     width: 58,
@@ -597,7 +456,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   headerTitle: {
-    fontSize: FontSizes.large,
+    fontSize: 24,
     fontWeight: '700',
     color: '#0F172A',
   },
@@ -609,7 +468,7 @@ const styles = StyleSheet.create({
   progressWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 24,
+    marginBottom: 4,
   },
   progressLabel: {
     width: 60,
@@ -648,7 +507,7 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   photoPlaceholder: {
-    height: 220,
+    height: 400,
     borderRadius: 18,
     borderWidth: 1,
     borderColor: '#E2E8F0',
@@ -689,81 +548,38 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   questionPrompt: {
-    marginTop: 28,
+    marginTop: 12,
     textAlign: 'center',
     fontSize: FontSizes.medium,
     fontWeight: '700',
     color: '#0F172A',
   },
-  voiceCard: {
-    marginTop: 20,
+  choiceList: {
+    marginTop: 16,
+    gap: 12,
+  },
+  choiceButton: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 20,
-    flexDirection: 'row',
-    paddingVertical: 18,
-    paddingHorizontal: 20,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#FEE2E2',
-  },
-  micButton: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: '#FEE2E2',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  micButtonActive: {
-    backgroundColor: '#F87171',
-  },
-  micImage: {
-    width: 34,
-    height: 34,
-    resizeMode: 'contain',
-  },
-  voiceTextWrapper: {
-    marginLeft: 16,
-    flex: 1,
-  },
-  voicePrimaryText: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#1F2937',
-  },
-  voiceSecondaryText: {
-    marginTop: 4,
-    fontSize: 13,
-    color: '#94A3B8',
-  },
-  speechErrorText: {
-    marginTop: 8,
-    textAlign: 'center',
-    fontSize: 13,
-    color: '#DC2626',
-  },
-  answerCard: {
-    marginTop: 20,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 20,
-    paddingVertical: 18,
-    paddingHorizontal: 20,
+    borderRadius: 18,
     borderWidth: 1,
     borderColor: '#E2E8F0',
+    paddingVertical: 18,
+    paddingHorizontal: 18,
   },
-  answerLabel: {
-    fontSize: 13,
+  choiceButtonSelected: {
+    borderColor: '#2563EB',
+    backgroundColor: '#EEF2FF',
+  },
+  choiceLabel: {
+    fontSize: 16,
     fontWeight: '600',
-    color: '#94A3B8',
-    marginBottom: 8,
-  },
-  answerText: {
-    fontSize: FontSizes.medium,
-    fontWeight: '700',
     color: '#0F172A',
   },
+  choiceLabelSelected: {
+    color: '#2563EB',
+  },
   feedbackChip: {
-    marginTop: 14,
+    marginTop: 16,
     borderRadius: 999,
     paddingHorizontal: 14,
     paddingVertical: 10,
@@ -781,50 +597,6 @@ const styles = StyleSheet.create({
     color: '#0F172A',
     textAlign: 'center',
   },
-  hintCard: {
-    marginTop: 22,
-    backgroundColor: '#FFFBEB',
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: '#FACC15',
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 16,
-    paddingHorizontal: 18,
-  },
-  hintCardActive: {
-    backgroundColor: '#FEF3C7',
-  },
-  hintIconWrapper: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
-    backgroundColor: '#FEF3C7',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 14,
-  },
-  hintIcon: {
-    fontSize: FontSizes.medium - 8,
-  },
-  hintTextWrapper: {
-    flex: 1,
-  },
-  hintTitle: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: '#B45309',
-  },
-  hintDescription: {
-    marginTop: 4,
-    fontSize: 13,
-    color: '#B45309',
-  },
-  hintArrow: {
-    fontSize: FontSizes.large - 4,
-    color: '#D97706',
-    fontWeight: '600',
-  },
   actionRow: {
     marginTop: 28,
     flexDirection: 'row',
@@ -838,14 +610,6 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  secondaryButton: {
-    backgroundColor: '#E2E8F0',
-  },
-  secondaryButtonText: {
-    color: '#475569',
-    fontSize: 15,
-    fontWeight: '600',
   },
   primaryButton: {
     backgroundColor: '#22C55E',

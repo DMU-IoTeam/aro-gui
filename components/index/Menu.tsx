@@ -30,7 +30,7 @@ const MENU_ITEMS = [
     path: "Medicine",
   },
   {
-    imageUrl: require("@/assets/images/notification.png"),
+    imageUrl: require("@/assets/images/calendar.png"),
     title: "일정확인",
     contents: "약 복용 시간 알림",
     path: "Schedule",
