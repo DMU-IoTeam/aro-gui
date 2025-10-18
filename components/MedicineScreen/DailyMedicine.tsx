@@ -41,7 +41,7 @@ export default function DailyMedicine({
   };
 
   return (
-    <View style={{ paddingHorizontal: 40, marginTop: 20, gap: 20 }}>
+    <View style={{ paddingHorizontal: 20, marginTop: 20, gap: 20 }}>
       <Text
         style={{ color: Colors.font.default, fontSize: 28, fontWeight: "700" }}
       >
@@ -66,7 +66,7 @@ export default function DailyMedicine({
               borderColor: "#eee"
             }}
           >
-            <View style={{ flex: 1, flexDirection: "row", alignItems: "center" }}>
+            <View style={{ flex: 1, flexDirection: "row", alignItems: "center", gap: 8 }}>
               <Image source={value.imageUrl}></Image>
               <View style={{ flex: 1, paddingHorizontal: 10 }}>
                 <Text

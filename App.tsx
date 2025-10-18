@@ -67,12 +67,12 @@ function App() {
       <Stack.Navigator initialRouteName="Home">
         <Stack.Screen name="Home" component={HomeScreen} options={{headerShown: false}} />
         <Stack.Screen name="Chat" component={ChatScreen} />
-        <Stack.Screen name="Game" component={GameScreen} />
-        <Stack.Screen name="GameResult" component={GameResultScreen} />
-        <Stack.Screen name="Health" component={HealthScreen} />
-        <Stack.Screen name="Medicine" component={MedicineScreen} />
+        <Stack.Screen name="Game" component={GameScreen} options={{headerShown: false}} />
+        <Stack.Screen name="GameResult" component={GameResultScreen} options={{headerShown: false}} />
+        <Stack.Screen name="Health" component={HealthScreen} options={{headerShown: false}} />
+        <Stack.Screen name="Medicine" component={MedicineScreen} options={{headerShown: false}} />
         <Stack.Screen name="Resister" component={ResisterScreen} options={{title: '보호자 연동'}}/>
-        <Stack.Screen name="Schedule" component={ScheduleScreen} />
+        <Stack.Screen name="Schedule" component={ScheduleScreen} options={{headerShown: false}} />
       </Stack.Navigator>
     </NavigationContainer>
   );

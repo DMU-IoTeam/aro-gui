@@ -175,7 +175,9 @@ export default function HealthScreen() {
       .catch(error => {
         console.error('Failed to submit health answers:', error);
         Alert.alert('오류', '건강 상태 기록에 실패했습니다.');
-        setIsSubmitting(false);
+      })
+      .finally(() => {
+        navigation.navigate('Home' as never);
       });
   }, [selections, questions, navigation]);
 
