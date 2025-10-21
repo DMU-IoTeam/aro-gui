@@ -22,8 +22,8 @@ export const setAccessToken = async (token: string): Promise<void> => {
 };
 
 // 플랫폼에 따라 다른 localhost 주소를 사용
-// const baseURL = 'http://10.0.2.2:8080';
-const baseURL = 'https://6a5ce4ef7bdb.ngrok-free.app' 
+const baseURL = 'http://10.0.2.2:8080';
+// const baseURL = 'https://8cebc8780c8f.ngrok-free.app' 
 
 const apiClient = axios.create({
   baseURL: baseURL,

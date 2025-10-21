@@ -556,6 +556,9 @@ const styles = StyleSheet.create({
   },
   choiceList: {
     marginTop: 16,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
     gap: 12,
   },
   choiceButton: {
@@ -565,6 +568,7 @@ const styles = StyleSheet.create({
     borderColor: '#E2E8F0',
     paddingVertical: 18,
     paddingHorizontal: 18,
+    flexBasis: '48%',
   },
   choiceButtonSelected: {
     borderColor: '#2563EB',

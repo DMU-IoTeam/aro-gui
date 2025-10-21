@@ -59,7 +59,7 @@ export default function MedicineScreen() {
         (schedule.items ?? []).map((item) => ({
           title: item.name,
           contents: item.memo || `복용 시간: ${formatTime(schedule.time)}`,
-          imageUrl: require('@/assets/images/medicine.png'),
+          imageUrl: item.id%2===0 ? require('@/assets/images/medicine.png') : require('@/assets/images/medicine2.png'),
           scheduleId: schedule.scheduleId,
           itemId: item.id,
         })),
