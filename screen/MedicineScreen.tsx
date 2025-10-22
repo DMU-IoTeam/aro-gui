@@ -24,6 +24,7 @@ import { useNavigation } from '@react-navigation/native';
 type DailyMedicineItem = {
   title: string;
   contents: string;
+  time: string;
   imageUrl: ReturnType<typeof require>;
   scheduleId?: number;
   itemId?: number;
@@ -33,7 +34,7 @@ const formatTime = (time: string) => {
   if (!time) {
     return '복용 시간 정보가 없어요';
   }
-  const [hour, minute] = time.split(':');
+  const [hour = '00', minute = '00'] = time.split(':');
   return `${hour}:${minute}`;
 };
 
@@ -56,13 +57,20 @@ export default function MedicineScreen() {
   const transformSchedule = useCallback(
     (schedules: MedicationSchedule[]): DailyMedicineItem[] =>
       schedules.flatMap((schedule) =>
-        (schedule.items ?? []).map((item) => ({
-          title: item.name,
-          contents: item.memo || `복용 시간: ${formatTime(schedule.time)}`,
-          imageUrl: item.id%2===0 ? require('@/assets/images/medicine.png') : require('@/assets/images/medicine2.png'),
-          scheduleId: schedule.scheduleId,
-          itemId: item.id,
-        })),
+        (schedule.items ?? []).map((item) => {
+          const formattedTime = formatTime(schedule.time);
+          return {
+            title: item.name,
+            contents: item.memo?.trim() || '복용 메모가 없어요',
+            time: formattedTime,
+            imageUrl:
+              item.id % 2 === 0
+                ? require('@/assets/images/medicine.png')
+                : require('@/assets/images/medicine2.png'),
+            scheduleId: schedule.scheduleId,
+            itemId: item.id,
+          };
+        }),
       ),
     [],
   );

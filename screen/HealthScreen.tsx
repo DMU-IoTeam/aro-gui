@@ -43,15 +43,15 @@ const THEME_BY_CATEGORY: Record<string, Theme> = {
 const getIconForQuestion = (questionId: number) => {
   switch (questionId) {
     case 1:
-      return require('@/assets/images/health-icon1.png');
-    case 2:
       return require('@/assets/images/health-icon2.png');
-    case 3:
-      return require('@/assets/images/health-icon3.png');
-    case 4:
-      return require('@/assets/images/health-icon4.png');
-    default:
+    case 2:
       return require('@/assets/images/health-icon1.png');
+    case 3:
+      return require('@/assets/images/health-icon2.png');
+    case 4:
+      return require('@/assets/images/health-icon2.png');
+    default:
+      return require('@/assets/images/health-icon2.png');
   }
 };
 

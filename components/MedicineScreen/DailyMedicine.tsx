@@ -15,6 +15,7 @@ type menuItem = {
   imageUrl: ImageSourcePropType;
   title: string;
   contents: string;
+  time: string;
   scheduleId?: number;
   itemId?: number;
 };
@@ -81,8 +82,20 @@ export default function DailyMedicine({
                 <Text
                   style={{
                     color: Colors.font.gray,
-                    fontSize: 24,
+                    fontSize: 20,
+                    marginTop: 4,
+                  }}
+                >
+                  {value.time === "복용 시간 정보가 없어요"
+                    ? value.time
+                    : `복용 시간: ${value.time}`}
+                </Text>
+                <Text
+                  style={{
+                    color: Colors.font.gray,
+                    fontSize: 20,
                     flexWrap: "wrap",
+                    marginTop: 4,
                   }}
                 >
                   {value.contents}
